@@ -5,172 +5,248 @@
 #include <istream>
 #include <fstream>
 #include <sstream>
+#include <stdint.h>
+#include "RenderNode.h"
+
+using namespace std;
 
 typedef unsigned long long int ProcUnit;
+typedef pair<uint64_t, string> JSON_Property;
+typedef unsigned short ushort;
 
 namespace Approach {
 namespace Renderable {
-public class JSONable : Renderable
+struct RenderJSON //: RenderNode
 {
-    public enum JSONableFlags
+    enum class MemberJSON
 	{
 		ObjMember = 0x1,
 		ArrayMember = 0x2,
 		StringMember = 0x4,
 		DecimalMember = 0x8,
-		IntMember = 0x10,
-		OpenRendered = 0x20,
-		ContentRendered = 0x40,
-		ContentOnly = 0x80,
-		EnsureChildren = 0x100,
-		Listening = 0x200,
-		PerforationPoint = 0x400
+		IntMember = 0x100,
 	};
 
-	JSONableFlags flags = 0;
+    MemberJSON flags;
 
 	bool IsArray;
-	UInt64 counter, cursor;
-	typedef std::pair<uint64_t, string> JSON_Property;
+	uint64_t counter, cursor;
 
 	map<JSON_Property, int64_t> IntegerValues;
 	map<JSON_Property, double> DecimalValues;
 	map<JSON_Property, string> StringValues;
-	map<JSON_Property, map<bool, JSONable>> children;
+	map<JSON_Property, pair<bool, RenderJSON*> > children;
 
 	map<uint64_t, ushort> TotalOrdering;
 
-	JSONABLE(bool _IsArray=false)
+	RenderJSON(bool _IsArray=false) : counter(0), cursor(0), IsArray(_IsArray)
 	{
 		//TODO call base constructor?
 
-		counter = 0; cursor = 0; TotalOrdering = new std::map<ulong, ushort>;
-		IsArray = _IsArray;
 
-		IntegerValues = new map<map<UInt64, string>, Int64>;
-		DecimalValues = new map<map<ulong, string>, double>;
-	    StringValues = new map<map<ulong, string>, string>;
-		children = new map<map<ulong, string>, map<bool, JSONable>>;
-		TotalOrdering = new map<ulong, ushort>;
+		TotalOrdering.clear();
+		IntegerValues.clear();
+		DecimalValues.clear();
+	    StringValues.clear();
+
+		children.clear();
+		TotalOrdering.clear();
+
+
 	}
 
-    JSONABLE(std::vector<typename someType> _properties, bool _IsArray=false)
+
+
+
+/*
+    RenderJSON(vector<typename someType> _properties, bool _IsArray=false)
 	{
 		//TODO call base constructor?
+        MemberJSON flags = 0;
 
-		counter = 0; cursor = 0; TotalOrdering = new std::map<ulong, ushort>;
+		counter = 0; cursor = 0; TotalOrdering = new map<ulong, ushort>;
 		IsArray = _IsArray;
 
 		IntegerValues = new map<map<UInt64, string>, Int64>;
 		DecimalValues = new map<map<ulong, string>, double>;
 	    StringValues = new map<map<ulong, string>, string>;
-		children = new map<map<ulong, string>, map<bool, JSONable>>;
+		children = new map<map<ulong, string>, map<bool, RenderJSON>>;
 		TotalOrdering = new map<ulong, ushort>;
 
-		std::vector<someType>::iterator iter = _properties.begin();
+		vector<someType>::iterator iter = _properties.begin();
 		while(itr != _properties.end())
 		{
-		    std::string TypeInUse = typeid(_properties[itr]);
+		    string TypeInUse = typeid(_properties[itr]);
 
 		    if(TypeInUse == typeid(int64_t))
 		    {
 		        IntegerValues.Add( new map<uint64_t, string>(counter, null), (int64_t)property);
-		        TotalOrdering.Add( counter, (ushort)JSONableFlags.IntMember);
+		        TotalOrdering.Add( counter, (ushort)MemberJSON.IntMember);
 
 		        counter++;
-		        continue;
+
 		    }
 		    if(TypeInUse == typeid(double))
 		    {
 		        DecimalValues.Add( new map<uint64_t, string>(counter, null), (double)property);
-		        TotalOrdering.Add( counter, (ushort)JSONableFlags.DecimalMember);
+		        TotalOrdering.Add( counter, (ushort)MemberJSON.DecimalMember);
 
 		        counter++;
-		        continue;
+
 		    }
 		    if(TypeInUse == typeid(string)
 		    {
 		        StringValues.Add( new map<uint64_t, string>(counter, null), (string)property);
-		        TotalOrdering.Add( counter, (ushort)JSONableFlags.StringMember);
+		        TotalOrdering.Add( counter, (ushort)MemberJSON.StringMember);
 
 		        counter++;
-		        continue;
+
 		    }
-		    if(TypeInUse == typeid(map<bool, JSONable>))
+		    if(TypeInUse == typeid(map<bool, RenderJSON>))
 		    {
-		        children.Add( new map<uint64_t, string>(counter, null), (map<bool, JSONable>)property);
+		        children.Add( new map<uint64_t, string>(counter, null), (map<bool, RenderJSON>)property);
 
-		        if(((map<bool, JSONable>)property).first) TotalOrdering.Add(counter, (ushort)JSONableflags.ArrayMember);
-		        else TotalOrdering.Add(counter, (ushort)JSONableFlags.ObjMember);
+		        if(((map<bool, RenderJSON>)property).first) TotalOrdering.Add(counter, (ushort)MemberJSON.ArrayMember);
+		        else TotalOrdering.Add(counter, (ushort)MemberJSON.ObjMember);
 
 		        counter++;
-		        continue;
+
 		    }
 		    if(TypeInUse == typeid(map<string, int64_t))
 		    {
 		        IntegerValues.Add( new map<uint64_t, string>(counter, ((map<string, int64_t>property).first),
                                              ((map<string, int64_t>)property).second;
-		        TotalOrdering.Add( counter, (ushort)JSONableFlags.IntMember);
+		        TotalOrdering.Add( counter, (ushort)MemberJSON.IntMember);
 
 		        counter++;
-		        continue;
+
 		    }
 		    if(TypeInUse == typeid(map<string, double>))
 		    {
 		        DecimalValues.Add( new map<uint64, string>(counter, ((map<string, double>)property).first),
                             ((map<string, double>)property).second);
-                TotalOrdering.Add(counter, (ushort)JSONableFlags.DecimalMember);
+                TotalOrdering.Add(counter, (ushort)MemberJSON.DecimalMember);
 
 		        counter++;
-		        continue;
+
 		    }
-		    if(TypeInUse == typeid(map<string, map<bool, JSONable>>))
+		    if(TypeInUse == typeid(map<string, map<bool, RenderJSON>>))
 		    {
-		        children.Add( new map<uint64_t, string>(counter, ((map<string, map<bool, JSONable>>)property).first),
-                       ((map<string, map<bool, JSONable)property).second);
+		        children.Add( new map<uint64_t, string>(counter, ((map<string, map<bool, RenderJSON>>)property).first),
+                       ((map<string, map<bool, RenderJSON)property).second);
 
-                if(((map<string, map<bool, JSONable>>)property).second.first) TotalOrdering.Add(counter, (ushort)JSONableFlags.ArrayMember);
-		        else TotalOrdering.Add(counter, (ushort)JSONableFlags.ObjMember);
+                if(((map<string, map<bool, RenderJSON>>)property).second.first) TotalOrdering.Add(counter, (ushort)MemberJSON.ArrayMember);
+		        else TotalOrdering.Add(counter, (ushort)MemberJSON.ObjMember);
 
 		        counter++;
-		        continue;
+
 		    }
 
 		    //last resort
-		    children.Add(new map<uint64_t, string(counter, null), new map<bool, JSONable>(flase, null) )
+		    children.Add(new map<uint64_t, string(counter, null), new map<bool, RenderJSON>(flase, null) )
 		    counter++;
 		}
 	}
+*/
 
 
 
-	inline void RenderHead(std::ostream& outputstream)
+
+
+
+
+
+/**	Rendering Pipeline Starts Below	**/
+
+
+bool addItem(int64_t property)
+{
+	//IntegerValues.insert( new JSON_Property(this->counter, NULL), property); //origoinal
+	IntegerValues[make_pair(this->counter, NULL)] = property; //correct syntax
+	TotalOrdering.insert(this->counter, MemberJSON::IntMember);
+	++this.counter;
+}
+
+bool addItem(double property)
+{
+	DecimalValues.insert( new JSON_Property(this.counter, null), property);
+	TotalOrdering.insert(this.counter, MemberJSON::DecimalMember);
+
+	++this.counter;
+}
+bool addItem(string property)
+{
+	StringValues.insert( new JSON_Property(this.counter, null), property);
+	TotalOrdering.insert(this.counter, MemberJSON::StringMember);
+
+	++this.counter;
+}
+
+bool addItem(pair<bool, RenderJSON> property)
+{
+	children.insert( property.first, property.second);
+
+	if(property.first) TotalOrdering.insert(this.counter, MemberJSON::ArrayMember);
+	else TotalOrdering.insert(this.counter, MemberJSON::ObjMember);
+
+	++this.counter;
+}
+
+bool addItem(pair<string, int64_t> property)
+{
+	IntegerValues.insert( new JSON_Property( this.counter, property.first ),property.second);
+	TotalOrdering.insert(this.counter, MemberJSON::IntMember);
+
+	++this.counter;
+}
+
+bool addItem(pair<string, double> property)
+{
+	DecimalValues.insert( new JSON_Property(this.counter, property.first), property.second);
+	TotalOrdering.insert(this.counter, MemberJSON::DecimalMember);
+
+	++this.counter;
+}
+bool addItem( pair<string, pair<bool, RenderJSON> > property)
+{
+	children.insert( new JSON_Property(this.counter, property.first), property.second);
+
+	if(property.second.first) TotalOrdering.insert(this.counter, MemberJSON::ArrayMember);
+	else TotalOrdering.insert(this.counter, MemberJSON::ObjMember);
+
+	++this.counter;
+}
+
+
+
+
+	inline void RenderHead(ostream& outputstream)
 	{
-		if (this->flags != JSONableFlags.ContentOnly && this->flags != JSONableFlags->OpenRendered)
+		if (this->flags != MemberJSON.ContentOnly && this->flags != MemberJSON->OpenRendered)
 		{
 			if (IsArray) outputstream<<"[";
 			else outputstream<<"{";
 
-			this->flags = this->flags & JSONableFlags->OpenRendered;
+			this->flags = this->flags & MemberJSON->OpenRendered;
 		}
 
-		this->flags = this->flags & JSONableFlags->ContentRendered //Set ContentRendered flag on
+		this->flags = this->flags & MemberJSON->ContentRendered //Set ContentRendered flag on
 	}
 
 	//TODO
-	inline void RenderCorpus(std::ostream& outputstream)
+	inline void RenderCorpus(ostream& outputstream)
 	{
-		if (this->flags != JSONableFlags.ContentRendered)
+		if (this->flags != MemberJSON.ContentRendered)
         {
             //for loop. each keyvaluepair item in totalordering
-            std::map<uint64_t, ushort>::iterator iter;
+            map<uint64_t, ushort>::iterator iter;
             for(iter = TotalOrdering.begin(); i != TotalOrdering.end(); i++)
             {
                 if (item.Key != 0) outputstream<<",";
                 switch(item.second)
                 {
                     case:
-                        std::map<uint64_t, std::string>::iterator iter2;
+                        map<uint64_t, string>::iterator iter2;
                         for(iter2 = IntegerValues.begin(); iter2 != IntegerValues.end();iter2++ )
                         {
                             if(item.first == iter2->first){
@@ -182,34 +258,34 @@ public class JSONable : Renderable
                     default: break;
                 }
             }
-            this.flags = this.flags & JSONableFlags.ContentRendered; //Set ContentRendered flag on
+            this.flags = this.flags & MemberJSON.ContentRendered; //Set ContentRendered flag on
         }
     }
 
-	inline void RenderTail(std::ostream& outputstream)
+	inline void RenderTail(ostream& outputstream)
 	{
-		ifthis->flags != JSONableFlags.Contentonly)
+		ifthis->flags != MemberJSON.Contentonly)
 		{
-			//outputstream<<std::endl;
+			//outputstream<<endl;
 			if(isArray) outputstream<<"]";
 			else outputstream<<"}";
 		}
 	}
 
-	inline void prerender(std::ostream& outputstream)
+	inline void prerender(ostream& outputstream)
 	{
 		this->RenderHead(outputstream);
 		this->RenderTail(outputstream);
 	}
 
-	inline std::ostream& render()
+	inline ostream& render()
 	{
-		std::ostream outputstream;
+		ostream outputstream;
 		this->render(outputstream);
 		return outputstream;
 	}
 
-	inline void render(std::ostream& outputstream)
+	inline void render(ostream& outputstream)
 	{
 		RenderHead(outputstream);
 		RenderCorpus(outputstream);
@@ -220,21 +296,21 @@ public class JSONable : Renderable
 		///stream functions
 		/////////////////////////////////
 
-	inline void operator>>(std::ostream& outputstream) {this->render(outputstream);}
+	inline void operator>>(ostream& outputstream) {this->render(outputstream);}
 
-	inline friend std::ostream& operator << (std::ostream& outputstream, JSONable &obj) {obj.render(outputstream);}
+	inline friend ostream& operator << (ostream& outputstream, RenderJSON &obj) {obj.render(outputstream);}
 
-    inline void Add(JSONable incoming)
+    inline void Add(RenderJSON incoming)
     {
-        children.Add(new map<ulong, string>(counter, null), new map<bool, JSONable>(incoming.IsArray, incoming));
-        TotalOrdering.Add(counter, (incoming.IsArray) ? (ushort)Jsonableflags.ArrayMember : (ushort)JSONableFlags.ObjMember);
+        children.Add(new map<ulong, string>(counter, null), new map<bool, RenderJSON>(incoming.IsArray, incoming));
+        TotalOrdering.Add(counter, (incoming.IsArray) ? (ushort)MemberJSON.ArrayMember : (ushort)MemberJSON.ObjMember);
         counter++;
     }
-    public void add(string key, JSONable incoming)
+    void add(string key, RenderJSON incoming)
     {
-        children.Add(new map<ulong, string>(counter, key), new map<bool, JSONable>(incoming.IsArray, incoming));
-        TotalOrdering.Add(counter, (incoming.IsArray) ? (ushort)JSONableFlags.ArrayMember : (ushort)JSONableFlags.ObjMember);
+        children.Add(new map<ulong, string>(counter, key), new map<bool, RenderJSON>(incoming.IsArray, incoming));
+        TotalOrdering.Add(counter, (incoming.IsArray) ? (ushort)MemberJSON.ArrayMember : (ushort)MemberJSON.ObjMember);
         counter++;
     }
-}
+};
 }

@@ -1,18 +1,23 @@
-package Approach;
+/*
+ * Notes
+ * Renderable Class:
+ * 		- In the constructor for RenderXML, I added 2 extra constructors for creating renderables without options and one for only tags. This is to allow calls like RenderXML r = new RenderXML('tag') without all the arguments. There may need to be a few extra constructors created. 
+ * JSONable class:
+ * 		- The Key-Value type checking for the Key-Value pairs in properties is untested and highly questionable
+ * 		- The switch statement was changed to ifs due to java not allowing function calls in the cases 
+ */
 
 import java.io.*;
-import java.security.KeyPair;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.Map.Entry;
 
 /**
  * Interface RenderNode
  */
-interface RenderNode // Is public in C#
+interface RenderNode //May need to be public in own file when classes get split into their own
 {
 	String render();
 	void render(OutputStreamWriter OutputStream);
@@ -136,7 +141,7 @@ class RenderXML extends Renderable
 {
 	public String tag, id, content;
 	public ArrayList<String> classes = new ArrayList<String>();
-	public Map<String, String> attributes = new HashMap<String, String>();
+	public HashMap<String, String> attributes = new HashMap<String, String>();
 
 	protected ArrayList<RenderNode> children = new ArrayList<RenderNode>();
 
@@ -166,22 +171,15 @@ class RenderXML extends Renderable
 
 	public EnumSet<RenderFlags> flags;
 
+	/* RenderXML constructor for all parameters */
 	RenderXML(String _tag, String _id, String _content,
-			ArrayList<String> _classes, Map<String, String> _attributes,
-			EnumSet<RenderFlags> _flags, Map<String, ?> options)
-	/* : base() */
+			ArrayList<String> _classes, HashMap<String, String> _attributes,
+			EnumSet<RenderFlags> _flags, HashMap<String, ?> options)
 	{
-		/* initializations moved here */
-		_id = null;
-		_content = null;
-		_classes = null;
-		_attributes = null;
-		_flags.clear();
-		options = null;
-
-		flags.clear();// Clearing flags
+		flags = EnumSet.noneOf(RenderFlags.class);
 
 		tag = _tag;
+		
 		if (_id != null)
 			id = _id;
 		if (_classes != null)
@@ -192,6 +190,33 @@ class RenderXML extends Renderable
 			content = _content;
 		if (!_flags.isEmpty())
 			flags.addAll(_flags);
+	}
+	
+	/* RenderXML constructor without options */
+	RenderXML(String _tag, String _id, String _content,
+			ArrayList<String> _classes, HashMap<String, String> _attributes, EnumSet<RenderFlags> _flags)
+	{
+		flags = EnumSet.noneOf(RenderFlags.class);
+
+		tag = _tag;
+		
+		if (_id != null)
+			id = _id;
+		if (_classes != null)
+			classes = _classes;
+		if (_attributes != null)
+			attributes = _attributes;
+		if (_content != null)
+			content = _content;
+		if (!_flags.isEmpty())
+			flags.addAll(_flags);
+	}
+	
+	/* RenderXML constructor for tags only */
+	RenderXML(String _tag) 
+	{
+		flags = EnumSet.noneOf(RenderFlags.class);
+		tag = _tag;
 	}
 
 	public String BuildAttributes()
@@ -206,8 +231,10 @@ class RenderXML extends Renderable
 
 	public String BuildClasses(String class_format)
 	{
-		class_format = " class=\""; // defining this here instead of in
-									// parameters
+		
+		if (class_format == null)
+			class_format = " class=\""; 
+		
 		if (this.classes.size() > 0)
 		{
 			for (String css_class : this.classes)
@@ -241,8 +268,7 @@ class RenderXML extends Renderable
 			{
 				e.printStackTrace();
 			}
-			this.flags.add(RenderFlags.OpenRendered); // Set OpenRendered flag
-														// on
+			this.flags.add(RenderFlags.OpenRendered); // Set OpenRendered flag on
 		}
 	}
 
@@ -363,25 +389,25 @@ class JSONable extends Renderable
 		}
 	};
 
-	public EnumSet<JSONableFlags> flags;
+	public EnumSet<JSONableFlags> flags = EnumSet.noneOf(JSONableFlags.class);
 
 	public boolean IsArray;
 	public long counter, cursor;
-	public Map<String, Long> properties = new HashMap<String, Long>();
+	public HashMap<String, Long> properties = new HashMap<String, Long>();
 
 	protected HashMap<Entry<Long, String>, Long> IntegerValues;
 	protected HashMap<Entry<Long, String>, Double> DecimalValues;
 	protected HashMap<Entry<Long, String>, String> StringValues;
 	protected HashMap<Entry<Long, String>, Entry<Boolean, JSONable>> children;
 
-	private Map<Long, Short> TotalOrdering;
+	private HashMap<Long, Short> TotalOrdering;
 
 	public JSONable(boolean _IsArray) /* : base() */// Need to figure out
 	{
-		_IsArray = false; // defining here instead of in parameters
+		
+		//_IsArray = false; //booleans can't be null, so assuming it is set
 		counter = 0;
 		cursor = 0;
-		TotalOrdering = new HashMap<Long, Short>();
 		IsArray = _IsArray;
 
 		IntegerValues = new HashMap<Entry<Long, String>, Long>();
@@ -395,7 +421,6 @@ class JSONable extends Renderable
 	// to clear up warnings for now
 	public JSONable(ArrayList<?> _properties, boolean _IsArray) /* : base() */
 	{
-		_IsArray = false; // defining here instead of in parameters
 		counter = 0;
 		cursor = 0;
 		TotalOrdering = new HashMap<Long, Short>();
@@ -544,7 +569,7 @@ class JSONable extends Renderable
 						e.printStackTrace();
 					}
 				}
-				/*switching switch to ifs because of constant error
+				/*switching switch to ifs because of an error not using constants
 				switch (item.getValue())
 				{
 					case (short) JSONableFlags.IntMember.getCode():

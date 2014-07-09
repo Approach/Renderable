@@ -1,11 +1,25 @@
+#include "enum_flags.h"
+
 namespace Approach
 {
     namespace Renderable
     {
+        ENUM_FLAGS(RenderFlags)
+        enum class RenderFlags //: uint32_t
+        {
+            OpenRendered = 0x1,
+            ContentRendered = 0x2,
+            ContentOnly = 0x4,
+            EnsureChildren = 0x8,
+            Listening = 0x100,
+            PerforationPoint = 0x200
+        };
+
         template <class OutStream>
         class RenderNode
         {
             public:
+
             virtual void render(OutStream& OutputStream)=0;
 
             /** Outputs this node's header any initial data */

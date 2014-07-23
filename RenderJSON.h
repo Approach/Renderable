@@ -10,8 +10,6 @@
 #include "RenderNode.h"
 
 using namespace std;
-
-typedef unsigned long long int ProcUnit;
 typedef pair<uint64_t, string> JSON_Property;
 typedef unsigned short ushort;
 
@@ -44,12 +42,11 @@ map<JSON_Property, double> DecimalValues;
 map<JSON_Property, string> StringValues;
 map<JSON_Property, pair<bool, RenderJSON*> > children;
 
-map<uint64_t, ushort> TotalOrdering;
+map<uint64_t, MemberJSON> TotalOrdering;
 
 RenderJSON(bool _IsArray=false) : counter(0), cursor(0), IsArray(_IsArray)
 {
 //TODO call base constructor?
-
 
 TotalOrdering.clear();
 IntegerValues.clear();
@@ -61,69 +58,68 @@ TotalOrdering.clear();
 
 
 }
-
+//potato this is test
 
 /** Rendering Pipeline Starts Below **/
 
-/*
+
 bool addItem(int64_t property)
 {
-IntegerValues.insert( (new JSON_Property(this->counter, NULL)), property);
-TotalOrdering.insert(this->counter, MemberJSON::IntMember);
+IntegerValues.insert( make_pair( make_pair(counter, static_cast<string>("")), property) ) ;
+TotalOrdering.insert( make_pair( this->counter, MemberJSON::IntMember ));
 ++this->counter;
 }
 
 bool addItem(double property)
 {
-DecimalValues.insert( new JSON_Property(this.counter, NULL), property);
-TotalOrdering.insert(this.counter, MemberJSON::DecimalMember);
+DecimalValues.insert( make_pair( make_pair(counter, static_cast<string>("")), property) ) ;
+TotalOrdering.insert( make_pair( counter, MemberJSON::DecimalMember) );
 
-++this.counter;
+++counter;
 }
 bool addItem(string property)
 {
-StringValues.insert( new JSON_Property(this.counter, NULL), property);
-TotalOrdering.insert(this.counter, MemberJSON::StringMember);
+StringValues.insert( make_pair( make_pair(counter, static_cast<string>("")), property) ) ;
+TotalOrdering.insert( make_pair(counter, MemberJSON::StringMember) );
 
-++this.counter;
+++counter;
 }
 
-bool addItem(pair<bool, RenderJSON> property)
+bool addItem(pair<bool, RenderJSON*> property)
 {
-children.insert( property.first, property.second);
+children.insert( make_pair( make_pair( counter, static_cast<string>("") ),property ) );
 
-if(property.first) TotalOrdering.insert(this.counter, MemberJSON::ArrayMember);
-else TotalOrdering.insert(this.counter, MemberJSON::ObjMember);
+if(property.first) TotalOrdering.insert( make_pair(counter, MemberJSON::ArrayMember) );
+else TotalOrdering.insert( make_pair(counter, MemberJSON::ObjMember) );
 
-++this.counter;
+++counter;
 }
 
 bool addItem(pair<string, int64_t> property)
 {
-IntegerValues.insert( new JSON_Property( this.counter, property.first ),property.second);
-TotalOrdering.insert(this.counter, MemberJSON::IntMember);
+IntegerValues.insert( make_pair( make_pair(counter, property.first ),property.second ) );
+TotalOrdering.insert( make_pair( counter, MemberJSON::IntMember) );
 
-++this.counter;
+++counter;
 }
 
 bool addItem(pair<string, double> property)
 {
-DecimalValues.insert( new JSON_Property(this.counter, property.first), property.second);
-TotalOrdering.insert(this.counter, MemberJSON::DecimalMember);
+DecimalValues.insert( make_pair( make_pair(counter, property.first ),property.second ) );
+TotalOrdering.insert( make_pair( counter, MemberJSON::DecimalMember) );
 
-++this.counter;
+++counter;
 }
-bool addItem( pair<string, pair<bool, RenderJSON> > property)
+
+bool addItem( pair<string, pair<bool, RenderJSON*> > property)
 {
-children.insert( new JSON_Property(this.counter, property.first), property.second);
+children.insert( make_pair( make_pair(counter, property.first ),property.second ) );
 
-if(property.second.first) TotalOrdering.insert(this.counter, MemberJSON::ArrayMember);
-else TotalOrdering.insert(this.counter, MemberJSON::ObjMember);
+if(property.second.first) TotalOrdering.insert( make_pair( counter, MemberJSON::ArrayMember) );
+else TotalOrdering.insert( make_pair(counter, MemberJSON::ObjMember) );
 
-++this.counter;
+++counter;
 }
-
-*/
 
 
 inline void RenderHead(ostream& outputstream)
@@ -133,10 +129,11 @@ inline void RenderHead(ostream& outputstream)
         if (IsArray) outputstream<<"[";
         else outputstream<<"{";
 
-        RenderState = flags(RenderState & RenderFlags::OpenRendered);
+
+      RenderState = RenderState & RenderFlags::OpenRendered;//set open rendered flag on
     }
 
-    this->RenderState = this->RenderState & RenderFlags::ContentRendered; //Set ContentRendered flag on
+    RenderState = RenderState & RenderFlags::ContentRendered; //Set ContentRendered flag on
 }
 
 //TODO
@@ -148,14 +145,22 @@ if (this->RenderState != RenderFlags::ContentRendered)
             for (auto& iter : TotalOrdering)
             {
                 if (iter.first != 0) outputstream<<",";
-                switch(typeid(iter.second))
+                switch(iter.second)
                 {
-                    case (typeid(int)): //TODO iter.second is of type integer
-                        //loop through every element in IntegerValues
-                        for (auto& iter2 : IntegerValues)
+                    case (MemberJSON::IntMember) : //TODO iter.second is of type integer
+
+                        //search integerValues for proper element.
+                        for (auto &iter2 : IntegerValues)
                         {
-                            if(iter.first == iter2.first){
-                                ostream<<"\""<<((iter2.second == NULL) ? iter2.first.)
+                            if(iter.first == iter2.first.first){ //Integer values is a map<map<uint64_t, string>, uint64_t>
+                            outputstream<<"\"" + (iter2.first.second.empty() ? iter2.first.first : iter2.first.second) + "\" : ";// + to_string(iter2);
+                            /*
+                                if(iter2.first.second.empty()){
+                                    outputstream<<std::string("\"") + std::string(iter2.first.first) + std::string("\" : ") + iter2;
+                                }else{
+                                    outputstream<<"\"" + iter2.first.second + "\" : " + to_string(iter2);
+                                }
+                                */
                             }
                         }
                         break;
@@ -163,13 +168,13 @@ if (this->RenderState != RenderFlags::ContentRendered)
                     default: break;
                 }
             }
-            this->RenderState = this->RenderState & RenderFlags->ContentRendered; //Set ContentRendered flag on
+            RenderState = this->RenderState & RenderFlags::ContentRendered; //Set ContentRendered flag on
         }
     }
 
 inline void RenderTail(ostream& outputstream)
 {
-if (this->RenderState != RenderFlags->ContentOnly)
+if (this->RenderState != RenderFlags::ContentOnly)
 {
 //outputstream<<endl;
 if(IsArray) outputstream<<"]";
@@ -181,13 +186,6 @@ inline void prerender(ostream& outputstream)
 {
 this->RenderHead(outputstream);
 this->RenderTail(outputstream);
-}
-
-inline ostream& render()
-{
-ostream& outputstream;
-this->render(outputstream);
-return outputstream;
 }
 
 inline void render(ostream& outputstream)
@@ -204,18 +202,23 @@ RenderTail(outputstream);
 inline void operator>>(ostream& outputstream) {this->render(outputstream);}
 
 inline friend ostream& operator << (ostream& outputstream, RenderJSON &obj) {obj.render(outputstream);}
+/*
+inline void Add(RenderJSON &incoming)
+{
+    //children.add(new map<ulong_t , to_stringstring>(counter, NULL), new map<bool, RenderJSON>(incoming.IsArray, incoming));
+    children.insert(make_pair(counter, NULL), make_pair(incoming.IsArray, incoming));
+    TotalOrdering.insert(counter, (incoming.IsArray) ? (ushort)MemberJSON->ArrayMember : (ushort)MemberJSON->ObjMember);
+    counter++;
+}
+*/
+void Add(RenderJSON &incoming){
+    addItem(make_pair(incoming.IsArray, &incoming));
+}
 
-    inline void Add(RenderJSON &incoming)
-    {
-        children.Add(new map<ulong_t , string>(counter, NULL), new map<bool, RenderJSON>(incoming.IsArray, incoming));
-        TotalOrdering.Add(counter, (incoming.IsArray) ? (ushort)MemberJSON.ArrayMember : (ushort)MemberJSON.ObjMember);
-        counter++;
-    }
-    void Add(string key, RenderJSON &incoming)
-    {
-        children.Add(new map<ulong, string>(counter, key), new map<bool, RenderJSON>(incoming.IsArray, incoming));
-        TotalOrdering.Add(counter, (incoming.IsArray) ? (ushort)MemberJSON.ArrayMember : (ushort)MemberJSON.ObjMember);
-        counter++;
-    }
+void Add(string key, RenderJSON &incoming)
+{
+    addItem(make_pair(string(key), make_pair(incoming.IsArray, &incoming)));
+}
+
 };
 }

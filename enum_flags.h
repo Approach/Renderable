@@ -46,7 +46,7 @@ enum class foo2_t
 int _tmain(int argc, _TCHAR* argv[])
 	{
 	if(flags(foo_t::a & foo_t::b)) {};
-	// if(flags(foo2_t::d & foo_t::b)) {};	// Type safety test - won't compile if uncomment
+	//if(flags(foo2_t::d & foo_t::b)) {};	// Type safety test - won't compile if uncommented
 	};
 
 */

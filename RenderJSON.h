@@ -1,4 +1,5 @@
 #include <iostream>
+#include <string>
 #include <vector>
 #include <map>
 #include <ostream>
@@ -32,7 +33,6 @@ IntMember = 0x100,
     RenderFlags RenderState;
     MemberJSON JSONFlags;
 //    RenderFlags RenderFlags;
-enum class T;
 
 bool IsArray;
 uint64_t counter, cursor;
@@ -58,7 +58,14 @@ TotalOrdering.clear();
 
 
 }
-//potato this is test
+
+template <typename Numeric>
+string to_string(Numeric number)
+{
+   stringstream ss;//create a stringstream
+   ss << number;//add number to the stream
+   return ss.str();//return a string with the contents of the stream
+}
 
 /** Rendering Pipeline Starts Below **/
 
@@ -148,19 +155,41 @@ if (this->RenderState != RenderFlags::ContentRendered)
                 switch(iter.second)
                 {
                     case (MemberJSON::IntMember) : //TODO iter.second is of type integer
-
                         //search integerValues for proper element.
                         for (auto &iter2 : IntegerValues)
                         {
                             if(iter.first == iter2.first.first){ //Integer values is a map<map<uint64_t, string>, uint64_t>
-                            outputstream<<"\"" + (iter2.first.second.empty() ? iter2.first.first : iter2.first.second) + "\" : ";// + to_string(iter2);
-                            /*
-                                if(iter2.first.second.empty()){
-                                    outputstream<<std::string("\"") + std::string(iter2.first.first) + std::string("\" : ") + iter2;
-                                }else{
-                                    outputstream<<"\"" + iter2.first.second + "\" : " + to_string(iter2);
-                                }
-                                */
+                            outputstream<<"\"" + (iter2.first.second.empty() ? to_string(iter2.first.first) : iter2.first.second) + "\" : " + to_string(iter2);
+                            }
+                        }
+                    break;
+
+                    case (MemberJSON::DecimalMember) : //TODO iter.second is of type double                        //search integerValues for proper element.
+                        for (auto &iter2 : DecimalValues)
+                        {
+                            if(iter.first == iter2.first.first){ //Integer values is a map<map<uint64_t, string>, uint64_t>
+                            outputstream<<"\"" + (iter2.first.second.empty() ? to_string(iter2.first.first) : iter2.first.second) + "\" : " + to_string(iter2);
+                            }
+                        }
+                    break;
+
+                    case (MemberJSON::StringMember) : //TODO iter.second is of type String
+                        //search integerValues for proper element.
+                        for (auto &iter2 : StringValues)
+                        {
+                            if(iter.first == iter2.first.first){ //Integer values is a map<map<uint64_t, string>, uint64_t>
+                            outputstream<<"\"" + (iter2.first.second.empty() ? to_string(iter2.first.first) : iter2.first.second) + "\" : \"" + to_string(iter2) + "\"";
+                            }
+                        }
+                        break;
+
+                    case (MemberJSON::ArrayMember):
+                    case (MemberJSON::ObjMember):
+                        for (auto &iter2 : children)
+                        {
+                            if(iter.first == iter2.first.first){
+                                outputstream<<((iter2.first.second.empty() ? ((iter2.second.first) ? "" : "\"" + to_string(iter2.first) + "\"") :"\"" + to_string(iter2.second.second) +"\"") + " : ");
+                                iter2.second.second->render(outputstream);
                             }
                         }
                         break;

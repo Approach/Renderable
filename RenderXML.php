@@ -90,65 +90,6 @@ class RenderXML
 		}
 	}
 
-
-	public function parse($string)
-	{
-	static $RecurseCount;
-	static $depth=0;
-	static $Condition=Array();
-	static $Conditions=Array();
-	static $Saved=array();
-	static $begin = 0;
-	static $found=false;
-	
-
-	$L=strlen($string);
-	for($i=0; $i < $L; ++$i)
-	{
-		if($string[$i]=='<' && $string[$i+1]=='@' && $string[$i+2] == '-' && $string[$i+3]=='-')	//Start Of Tag Detected
-		{
-			if($string[$i+4]==' ' && $string[$i+5]=='/' && $string[$i+6]==' ' && $string[$i+7] == '-' &&
-			 $string[$i+8] == '-' && $string[$i+9] == '@' && $string[$i+10] == '>') //End Injector ' / --@>'
-			{
-			$Condition['Close']['Start']=$i;
-			$i=$Condition['Close']['End']=$i+10;
-
-			$Evaluate = substr( $string, $Condition['Open']['Start']+4, $Condition['Open']['End']-$Condition['Open']['Start']-8);
-			$Evaluate .= PHP_EOL . '{ return 1; } '.PHP_EOL.'else{ return -1; }';
-			$Condition['result']=eval( $Evaluate );	//Template expression blocks: Danger, Warning, Danger!
-			}
-			else	//Injector Detected
-			{
-			$Condition['Open']['Start']=$i;
-			$i+=3;
-			}
-			continue;
-		}
-		elseif($string[$i]=='-' && $string[$i+1]=='-' && $string[$i+2] == '@' && $string[$i+3]=='>')	//End Of Tag Detected
-		{
-			$i=$Condition['Open']['End']=$i+3;
-			continue;
-		}
-	}
-
-	foreach($Conditions as $Cursor => $Condition)
-	{
-		$Cursor = $Cursor + 0; //make int?
-
-		//Cut Out the markup *between* any if statments
-		$RecurseCount++;
-		$InnerStatements=substr($string, $Condition['Open']['End']+1, $Condition['Close']['Start'] - $Condition['Open']['End']-1);
-		if($Condition['result']==-1) $InnerStatements ='';
-		
-		$string=str_replace(substr($string, $Condition['Open']['Start'], $Condition['Close']['End'] - $Condition['Open']['Start']+1 ), $InnerStatements, $string);
-
-		if(strpos($InnerStatements, '<@--') != false) $Saved[]=$this->parse($InnerStatements);
-		$begin=$Condition['Close']['End'];
-	}
-	return $string;
-	}
-
-
 	public function buildAttributes()
 	{
 		$attribsToString=' ';
